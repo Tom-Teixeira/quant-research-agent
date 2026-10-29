@@ -1,0 +1,25 @@
+# 量化数据仓库：PostgreSQL + pgvector
+# 用途：超大规模公告/新闻的元数据存储 + 向量化语义检索（RAG）
+# 启动：docker compose -f docker-compose.db.yml up -d
+services:
+  quantdb:
+    image: pgvector/pgvector:pg16
+    container_name: quant-pgvector
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: quant
+      POSTGRES_PASSWORD: quant_pass_2026
+      POSTGRES_DB: quantdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - quant_pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quant -d quantdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  quant_pgdata:

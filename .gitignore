@@ -1,0 +1,17 @@
+# 密钥与环境配置（绝不上传）
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行产物（本地验证生成）
+output/report_*.md
+output/factor_panel_from_db.csv
+
+# 系统
+.DS_Store
+Thumbs.db
