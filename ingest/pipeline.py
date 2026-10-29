@@ -70,12 +70,15 @@ def run_ingest_pipeline(
     df = time_align_panel.func(df)
     df = df.rename(columns={"date": "ann_date", "code": "ts_code"})
 
-    # 3. 元数据批量入库（幂等）
+    # 3. 元数据批量入库（幂等；content_seg 为 jieba 分词，供 BM25 稀疏检索）
+    from rag.segment import segment_chinese
+
     doc_records = [
         {
             "doc_type": r["doc_type"], "ts_code": r["ts_code"], "name": r["name"],
             "title": r["title"], "content": r["text"], "ann_date": r["ann_date"],
             "source_url": r.get("source_url", ""),
+            "content_seg": segment_chinese(r["text"]),
             "extra": {"chunk_count": len(_chunk_text(r["text"]))},
         }
         for _, r in df.iterrows()

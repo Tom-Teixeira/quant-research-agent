@@ -46,7 +46,9 @@ class QuantState(TypedDict, total=False):
     index_code: str           # 指数代码（成分股来源，如 000300.SH）
     ts_code: str              # RAG 检索股票代码过滤
     query: str                # RAG 检索查询（用户/上游给定）
-    evidence: list            # RAG 检索证据集 [{ann_date, name, title, chunk_text, distance, ...}]
+    evidence: list            # RAG 检索证据集 [{ann_date, name, title, chunk_text, rrf_score, ...}]
+    rag_mode: str             # 自适应 RAG 模式: adaptive（默认）/ hybrid / vector
+    rag_route: str            # 查询复杂度路由结果: direct / simple / complex
 
 
 # 图内消息历史（预留：若扩展为对话式 agent 可启用 add_messages reducer）

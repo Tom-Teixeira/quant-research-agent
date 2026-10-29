@@ -16,6 +16,9 @@ python-dotenv>=1.0
 psycopg[binary]>=3.1
 fastembed>=0.4
 
+# ---- V2.5：混合检索（BM25 稀疏路：中文 jieba 分词）----
+jieba>=0.42.1
+
 # ---- V2：真实数据源（东方财富 Choice 量化接口 EMQuantAPI）----
 # 注意：EMQuantAPI 不是 pip 包，无法通过本文件安装。请按下述官方方式安装：
 #   1) 下载 https://quantapi.eastmoney.com/ 的 EmQuantAPI_Python.zip

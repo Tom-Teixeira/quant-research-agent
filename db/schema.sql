@@ -15,12 +15,31 @@ CREATE TABLE IF NOT EXISTS documents (
     ann_date      DATE NOT NULL,                -- 发布日期
     source_url    TEXT,                         -- PDF/原文链接
     extra         JSONB DEFAULT '{}',           -- 扩展字段（事件类型、情感词典分等）
+    content_seg   TEXT,                         -- jieba 空格分词文本（BM25 稀疏检索用）
+    content_tsv   tsvector,                     -- tsvector（title 权重 A / 正文权重 B）
     created_at    TIMESTAMPTZ DEFAULT now()
 );
+
+-- tsvector 增量维护触发器（插入/更新 title 或 content_seg 时重算）
+CREATE OR REPLACE FUNCTION documents_tsv_trigger() RETURNS trigger AS $$
+BEGIN
+    NEW.content_tsv :=
+        setweight(to_tsvector('simple', coalesce(NEW.title, '')), 'A') ||
+        setweight(to_tsvector('simple', coalesce(NEW.content_seg, '')), 'B');
+    RETURN NEW;
+END $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_documents_tsv ON documents;
+CREATE TRIGGER trg_documents_tsv
+    BEFORE INSERT OR UPDATE OF title, content_seg ON documents
+    FOR EACH ROW EXECUTE FUNCTION documents_tsv_trigger();
 
 CREATE INDEX IF NOT EXISTS idx_documents_date ON documents (ann_date);
 CREATE INDEX IF NOT EXISTS idx_documents_code ON documents (ts_code);
 CREATE INDEX IF NOT EXISTS idx_documents_type ON documents (doc_type);
+-- BM25 稀疏检索 GIN 索引（websearch_to_tsquery 命中）
+CREATE INDEX IF NOT EXISTS idx_documents_content_tsv
+    ON documents USING GIN (content_tsv);
 -- 幂等入库去重键（doc_type + ts_code + title + ann_date）
 CREATE UNIQUE INDEX IF NOT EXISTS uq_documents_key
     ON documents (doc_type, ts_code, title, ann_date);

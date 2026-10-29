@@ -28,6 +28,8 @@ def main() -> None:
     parser.add_argument("--index", default="000300.SH", help="指数代码")
     parser.add_argument("--query", default="回购增持进展", help="RAG 检索查询")
     parser.add_argument("--ts-code", default="", help="RAG 股票代码过滤")
+    parser.add_argument("--mode", choices=["adaptive", "hybrid", "vector"], default="adaptive",
+                        help="RAG 检索模式：adaptive=自适应路由(默认) / hybrid=固定混合检索 / vector=纯向量")
     args = parser.parse_args()
 
     settings = get_settings()
@@ -43,15 +45,22 @@ def main() -> None:
         print(f"[stage] 入库耗时 {time.time() - t0:.1f}s  结果: {json.dumps(stats, ensure_ascii=False)}")
 
     elif args.stage == "rag":
-        print(f"[stage] RAG 检索增强  查询: {args.query}  代码过滤: {args.ts_code or '全部'}")
+        print(f"[stage] RAG 检索增强（模式={args.mode}）  查询: {args.query}  代码过滤: {args.ts_code or '全部'}")
         t0 = time.time()
         result = rag_generate(args.query, settings, top_k=5,
                               start_date=args.start, end_date=args.end,
-                              ts_code=args.ts_code or None)
-        print(f"[stage] 检索到 {len(result['evidence'])} 条证据，生成耗时 {time.time() - t0:.1f}s")
+                              ts_code=args.ts_code or None,
+                              mode=args.mode)
+        print(f"[stage] 路由={result.get('route')} 检索到 {len(result['evidence'])} 条证据，生成耗时 {time.time() - t0:.1f}s")
+        if result.get("queries"):
+            print(f"[stage] 子查询: {result['queries']}")
         print("\n---- 证据 ----")
         for h in result["evidence"]:
-            print(f"  [{h['ann_date']}] {h['name']} | {h['title']} (相似度 {round(1 - h['distance'], 4)})")
+            score = h.get("rrf_score")
+            score_txt = f"RRF {score}" if score is not None else (
+                f"相似度 {round(1 - h['distance'], 4)}" if "distance" in h else "混合"
+            )
+            print(f"  [{h['ann_date']}] {h['name']} | {h['title']} ({score_txt})")
         print("\n---- DeepSeek 分析 ----")
         print(result["report"])
 

@@ -85,13 +85,16 @@ def ingest_db_node(state: QuantState, settings: Settings) -> dict:
 
 
 def rag_retrieve_node(state: QuantState, settings: Settings) -> dict:
-    """RAG 检索：对研究主题做 pgvector 语义检索，产出证据集。"""
+    """RAG 检索：自适应混合检索（HNSW+BM25 RRF，按查询复杂度路由）。"""
     query = state.get("query") or "回购增持进展"
-    hits = retrieve_docs(query, top_k=5,
-                         start_date=state.get("start_date"),
-                         end_date=state.get("end_date"),
-                         ts_code=state.get("ts_code"))
-    return {"evidence": hits}
+    llm = build_llm(settings) if settings.agent_mode == "live" else None
+    result = retrieve_docs(query, top_k=5,
+                           start_date=state.get("start_date"),
+                           end_date=state.get("end_date"),
+                           ts_code=state.get("ts_code"),
+                           mode=state.get("rag_mode", "adaptive"),
+                           llm=llm)
+    return {"evidence": result["evidence"], "rag_route": result.get("route")}
 
 
 def rag_report_node(state: QuantState, settings: Settings) -> dict:
@@ -102,9 +105,14 @@ def rag_report_node(state: QuantState, settings: Settings) -> dict:
     evidence = state.get("evidence", [])
     ev_lines = []
     for h in evidence:
-        ev_lines.append(f"- [{h['ann_date']}] {h['name']} {h['title']} (相似度 {round(1 - h['distance'], 4)})\n  {h['chunk_text'][:180]}")
+        score = h.get("rrf_score")
+        score_txt = f"RRF {score}" if score is not None else (
+            f"相似度 {round(1 - h['distance'], 4)}" if "distance" in h else "混合"
+        )
+        ev_lines.append(f"- [{h['ann_date']}] {h['name']} {h['title']} ({score_txt})\n  {str(h.get('chunk_text'))[:180]}")
     payload = {
         "query": state.get("query", ""),
+        "rag_route": state.get("rag_route"),
         "quant_metrics": {
             "rank_ic": state["quality"].get("rank_ic"),
             "icir": state["quality"].get("icir"),
