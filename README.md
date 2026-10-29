@@ -4,11 +4,11 @@
 把你（彤天基金实习）的另类数据量化流水线工程化、可编排、可观测：
 
 > 10万+ 公告/新闻清洗 → 1000+ 文本因子 → ML 横截面信号 → 回测与中性组合验证
-> **V2 升级：真实数据源（Tushare）→ PostgreSQL/pgvector 超大规模入库 → RAG 检索增强**
+> **V2 升级：真实数据源（Choice/EMQuantAPI）→ PostgreSQL/pgvector 超大规模入库 → RAG 检索增强**
 
 本仓库提供 **可运行的端到端骨架**：mock 模式无需任何 API key 即可跑通全图；
-配置 DeepSeek / LangSmith / Tushare token 后切换 live 模式，获得真实数据驱动的
-LLM 研究报告与全链路追踪。
+激活 Choice 量化接口（或配置 DeepSeek / LangSmith key）后切换 live 模式，获得
+真实数据驱动的 LLM 研究报告与全链路追踪。
 
 ---
 
@@ -20,7 +20,7 @@ LLM 研究报告与全链路追踪。
 | **LangGraph** | 状态机编排：节点、条件边、循环、状态传递 | `graph.py`（V1 六节点）；`graph_v2.py`（V2 全图：入库→因子→门控→回测→RAG） |
 | **LangSmith** | 全链路可观测：节点/工具级 tracing | 所有工具 `@traceable`；`config.py` 注入；按 run 可回放 |
 | **DeepSeek** | 推理引擎：因子失效诊断、研究报告、RAG 生成 | `langchain-deepseek` 官方集成 |
-| **Tushare** | 真实数据源（公告/新闻/研报/成分股/行情） | `ingest/data_providers.py`（SDK 直连，双后端抽象） |
+| **Choice (EMQuantAPI)** | 真实数据源（公告/公司资讯/成分股/行情） | `ingest/data_providers.py`（东方财富 Choice 量化接口，双后端抽象） |
 | **PostgreSQL/pgvector** | 超大规模存储 + 向量检索 | `db/`（documents 元数据表 + HNSW 向量索引 + 检索视图） |
 | **fastembed(bge)** | 中文公告向量化（512 维 ONNX） | `rag/embedder.py`（BAAI/bge-small-zh-v1.5） |
 
@@ -56,7 +56,7 @@ LLM 研究报告与全链路追踪。
 START ─┬─► db_check （并行健康检查，不阻塞）
        │
        ▼
-ingest_db_node     ① 真实数据拉取（Tushare/文件）→ 清洗 → pgvector 元数据+向量入库
+ingest_db_node     ① 真实数据拉取（Choice/文件）→ 清洗 → pgvector 元数据+向量入库
        │
        ▼
 factor_node        ② 文本因子构建（读库因子面板或示例数据）
@@ -97,11 +97,11 @@ python main_v2.py --stage check
 ### 4.2 数据入库（超大规模公告）
 
 ```bash
-# 文件后端（无 TUSHARE_TOKEN 时的开发验证，用示例数据）
+# 文件后端（未安装/激活 Choice 时的开发验证，用示例数据）
 python main_v2.py --stage ingest --start 2024-01-01 --end 2024-01-31
 
-# 真实数据后端（.env 配置 TUSHARE_TOKEN 后自动切换）
-#   → 沪深300成分股(000300.SH) 公告/新闻/研报 → 清洗去重 → 分块(512/64) → 向量化 → pgvector
+# 真实数据后端（安装并激活 Choice 量化接口 EMQuantAPI 后自动切换）
+#   → 沪深300成分股(000300.SH) 公告/公司资讯/行情 → 清洗去重 → 分块(512/64) → 向量化 → pgvector
 python main_v2.py --stage ingest --start 2018-01-01 --end 2025-12-31
 ```
 
@@ -123,13 +123,24 @@ python main_v2.py --stage research --start 2024-01-01 --end 2024-01-10
 
 `ingest/data_providers.py` 抽象了统一接口，`get_provider("auto")` 按环境自动切换：
 
-| 后端 | 触发条件 | 覆盖接口 | 用途 |
+| 后端 | 触发条件 | 覆盖接口（EMQuantAPI） | 用途 |
 |---|---|---|---|
-| **TushareProvider** | `.env` 配置 `TUSHARE_TOKEN` | `anns_d`（公告）、`news`、`major_news`、`research_report`、`index_weight`（成分股）、`daily` | 生产/真实研究 |
-| **FileProvider** | 无 token（回退） | 本地 `data/sample_announcements.csv` | 开发验证（显式标注） |
+| **ChoiceProvider** | 本机已安装并激活 Choice 量化接口（EMQuantAPI 可导入） | `sector`（沪深300成分）、`cfn("report")`（公告）、`cfn("companynews")`（公司资讯）、`csd("CLOSE", 前复权)`（日线→ret_next） | 生产/真实研究 |
+| **FileProvider** | 未安装 EMQuantAPI（回退） | 本地 `data/sample_announcements.csv` | 开发验证（显式标注） |
 
-> Tushare 的 MCP 插件在本机曾报「授权失败」——项目因此采用官方 SDK 直连（`tushare` pip 包 + token），
-> 不依赖插件授权状态。token 只存 `.env`，不写入代码/日志。
+### EMQuantAPI 安装与激活（官方非 pip 包，两步）
+
+1. **安装**：从 https://quantapi.eastmoney.com/ 下载 `EmQuantAPI_Python.zip`；
+   Windows 以管理员运行 `EmQuantAPISetup.exe`（选择 Python 环境），
+   或命令行运行 `installEmQuantAPI.py` 注册（不能 `pip install`）。
+2. **激活**：在 quantapi.eastmoney.com 绑定手机号 → 运行 `LoginActivator.exe`
+   生成 `userinfo` 登录令牌；或在 `.env` 配置 `CHOICE_USERNAME/CHOICE_PASSWORD`
+   走账密登录（`c.start` 直接账密模式，不生成令牌）。
+
+> 说明：EMQuantAPI 资讯函数 `cfn` 的 content 支持 `report`（公告）/`companynews`
+> （公司资讯）/`industrynews`/`regularreport`/`tradeinfo` 等，**暂无研报分类**，
+> `get_research_reports` 返回空并显式标注，避免静默缺数据。登录生命周期懒加载
+> （首次取数 `c.start`，进程退出 `c.stop`）。账号只存 `.env`，不写入代码/日志。
 
 ## 6. V2 数据库设计（PostgreSQL + pgvector）
 
@@ -185,7 +196,7 @@ quant-agent/
 │   ├── schema.sql          # 3 表 + HNSW 索引 + v_docs 视图
 │   └── db_client.py        # 幂等入库/向量写入/过滤检索/因子落库
 ├── ingest/                 # 数据接入与入库管线
-│   ├── data_providers.py   # DataProvider 抽象：Tushare / File 双后端
+│   ├── data_providers.py   # DataProvider 抽象：Choice / File 双后端
 │   └── pipeline.py         # 拉取→清洗→去重→分块→向量化→入库
 ├── rag/
 │   ├── embedder.py         # bge-small-zh-v1.5（fastembed/ONNX）
@@ -203,5 +214,5 @@ quant-agent/
 2. **DeepSeek-R1 深度诊断**：`DEEPSEEK_MODEL=deepseek-reasoner`
 3. **LangSmith 评估集**：历史因子期 benchmark，评估重构前后 IC/ICIR
 4. **人机复核门控**：backtest 前 human-in-the-loop（LangGraph interrupt/checkpointer）
-5. **定时增量入库**：Tushare 增量拉取 + cron 编排（对齐实习的每日公告增量）
+5. **定时增量入库**：Choice 增量拉取 + cron 编排（对齐实习的每日公告增量）
 6. **向量混合检索**：BM25 稀疏 + pgvector 稠密（吸收 quant-buddy 检索模式）

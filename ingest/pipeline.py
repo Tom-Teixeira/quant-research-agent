@@ -49,7 +49,7 @@ def run_ingest_pipeline(
     codes = provider.get_index_constituents(index_code)
     if not codes:
         codes = provider.get_announcements([], start_date, end_date) or []
-        raise ValueError("未获取到成分股列表，请检查数据源（Tushare token 或本地文件）")
+        raise ValueError("未获取到成分股列表，请检查数据源（Choice 环境或本地文件）")
 
     announcements = provider.get_announcements(codes, start_date, end_date)
     news = provider.get_news(start_date, end_date)

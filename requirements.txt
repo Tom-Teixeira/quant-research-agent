@@ -15,4 +15,12 @@ python-dotenv>=1.0
 # ---- V2：数据库 + RAG ----
 psycopg[binary]>=3.1
 fastembed>=0.4
-tushare>=1.4  # 真实数据源（DataProvider 直连，非 MCP）
+
+# ---- V2：真实数据源（东方财富 Choice 量化接口 EMQuantAPI）----
+# 注意：EMQuantAPI 不是 pip 包，无法通过本文件安装。请按下述官方方式安装：
+#   1) 下载 https://quantapi.eastmoney.com/ 的 EmQuantAPI_Python.zip
+#   2) Windows：管理员运行 EmQuantAPISetup.exe（选择 Python 环境）；
+#      或命令行运行 installEmQuantAPI.py 注册
+#   3) 激活：quantapi.eastmoney.com 绑定手机号 → 运行 LoginActivator.exe
+#      生成 userinfo 登录令牌（或 .env 配置 CHOICE_USERNAME/CHOICE_PASSWORD 账密登录）
+# 未安装时数据层自动回退 FileProvider（data/sample_announcements.csv，仅开发验证）

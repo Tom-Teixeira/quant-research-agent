@@ -1,7 +1,7 @@
 """二期入口：真实数据 → pgvector 入库 → RAG 检索增强 → 因子/回测 → 报告。
 
 用法：
-    python main_v2.py --stage ingest    # 拉取数据入库（Tushare 或文件）
+    python main_v2.py --stage ingest    # 拉取数据入库（Choice 或文件）
     python main_v2.py --stage rag       # RAG 检索问答（DeepSeek 生成）
     python main_v2.py --stage research  # 全流程：入库→因子→回测→报告
 """
@@ -37,7 +37,7 @@ def main() -> None:
         print("数据库健康检查:", json.dumps(health_check(), ensure_ascii=False))
 
     elif args.stage == "ingest":
-        print(f"[stage] 数据入库 {args.start} ~ {args.end}  指数={args.index}  数据源=auto(Tushare优先)")
+        print(f"[stage] 数据入库 {args.start} ~ {args.end}  指数={args.index}  数据源=auto(Choice优先)")
         t0 = time.time()
         stats = run_ingest_pipeline(args.start, args.end, index_code=args.index)
         print(f"[stage] 入库耗时 {time.time() - t0:.1f}s  结果: {json.dumps(stats, ensure_ascii=False)}")

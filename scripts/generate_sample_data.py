@@ -66,7 +66,9 @@ def build_sample_data(path: str) -> None:
 
 
 if __name__ == "__main__":
+    import sys
     from pathlib import Path
 
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     out = Path(__file__).resolve().parents[1] / "data" / "sample_announcements.csv"
     build_sample_data(str(out))
