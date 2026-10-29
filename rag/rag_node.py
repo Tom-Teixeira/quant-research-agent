@@ -52,7 +52,7 @@ def rag_generate(
     Returns:
         {query, evidence: [...], route, queries, report}
     """
-    llm = build_llm(settings) if settings.agent_mode == "live" else None
+    llm = build_llm(settings) if settings.mode == "live" else None
     result = retrieve_docs(query, top_k=top_k, start_date=start_date,
                            end_date=end_date, ts_code=ts_code,
                            mode=mode, llm=llm)

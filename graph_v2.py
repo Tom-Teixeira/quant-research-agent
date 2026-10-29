@@ -87,7 +87,7 @@ def ingest_db_node(state: QuantState, settings: Settings) -> dict:
 def rag_retrieve_node(state: QuantState, settings: Settings) -> dict:
     """RAG 检索：自适应混合检索（HNSW+BM25 RRF，按查询复杂度路由）。"""
     query = state.get("query") or "回购增持进展"
-    llm = build_llm(settings) if settings.agent_mode == "live" else None
+    llm = build_llm(settings) if settings.mode == "live" else None
     result = retrieve_docs(query, top_k=5,
                            start_date=state.get("start_date"),
                            end_date=state.get("end_date"),
