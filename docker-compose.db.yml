@@ -8,7 +8,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: quant
-      POSTGRES_PASSWORD: quant_pass_2026
+      # 密码从环境变量注入；未设置时使用本地开发默认值（生产/公开环境请务必设置）
+      POSTGRES_PASSWORD: ${QUANT_DB_PASSWORD:-quant_pass_2026}
       POSTGRES_DB: quantdb
     ports:
       - "5432:5432"

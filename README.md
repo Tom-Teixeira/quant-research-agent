@@ -94,6 +94,10 @@ docker compose -f docker-compose.db.yml up -d
 python main_v2.py --stage check
 ```
 
+> 数据库密码默认使用本地开发值 `quant_pass_2026`（见 docker-compose.db.yml）；
+> 对外/生产环境请用环境变量 `QUANT_DB_PASSWORD` 覆盖，并在 `.env` 的
+> `QUANT_DB_DSN` 中保持同一密码（仓库不保存真实凭据）。
+
 ### 4.2 数据入库（超大规模公告）
 
 ```bash
