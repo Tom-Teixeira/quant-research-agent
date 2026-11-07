@@ -1,8 +1,6 @@
 # Quant Research Agent
 
-基于 **LangChain + LangGraph + LangSmith + DeepSeek LLM** 构建的量化研究 Agent，
-把你（彤天基金实习）的另类数据量化流水线工程化、可编排、可观测：
-
+基于 **LangChain + LangGraph + LangSmith + DeepSeek LLM** 构建的量化研究 Agent：
 > 10万+ 公告/新闻清洗 → 1000+ 文本因子 → ML 横截面信号 → 回测与中性组合验证
 > **V2 升级：真实数据源（Choice/EMQuantAPI）→ PostgreSQL/pgvector 超大规模入库 → RAG 检索增强**
 > **V2.5 升级：自适应 RAG——HNSW 稠密 + BM25 稀疏 → RRF 融合，按查询复杂度动态路由**
@@ -25,21 +23,11 @@
 | **PostgreSQL/pgvector** | 超大规模存储 + 向量检索 | `db/`（documents 元数据表 + HNSW 向量索引 + 检索视图） |
 | **fastembed(bge)** | 中文公告向量化（512 维 ONNX） | `rag/embedder.py`（BAAI/bge-small-zh-v1.5） |
 
-> 为什么用图而不是普通函数链？普通链无法表达"IC 不达标 → 诊断 → 重建因子 → 再验证"
-> 的条件分支与循环，也无法中断后恢复/回放。LangGraph 把状态作为一等公民，节点都是
-> `(state_in) -> (state_out)` 纯函数，执行路径完全可追踪、可测试。
->
-> **V2 为什么加数据库 + RAG？** 对标 10万+ 公告量级：原始大表直接塞进 LLM 上下文
-> 既不经济也易污染（token 爆炸）。V2 把数据沉淀到 pgvector（元数据 + 向量双表），
-> 检索时只取 Top-K 结构化证据进 Prompt——吸收 GitHub 优秀项目
-> [quant-buddy-skills](https://github.com/pseudo-longinus/quant-buddy-skills) 的
-> 「平台侧计算、只返回结构化结果」设计思想（见 §7）。
-
 ---
 
-## 2. 实习经历 → Agent 模块映射
+## 2. Pipeline
 
-| 彤天实习流水线 | Agent 节点 | 核心工具 | 质量口径 |
+| 流水线 | Agent 节点 | 核心工具 | 质量口径 |
 |---|---|---|---|
 | 10万+公告清洗/对齐/校验 | `ingest_node`（V1）/ `ingest_db_node`（V2） | `clean_text_series` `deduplicate_records` `time_align_panel` | 去重/缺失/空文本报告；入库幂等（唯一键去重） |
 | 文本情绪/事件强度 → 1000+因子 | `factor_node` | `sentiment_score` `event_intensity` `build_factor_panel` | 因子面板 + 元信息 |
