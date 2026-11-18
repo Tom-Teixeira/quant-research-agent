@@ -312,7 +312,7 @@ def get_provider(name: str = "auto") -> DataProvider:
         return FileProvider()
     # auto：优先真实数据（Choice 终端量化接口）
     try:
-        import EMQuantAPI  # noqa: F401
+        import EMQuantAPI  # noqa: F401  # pylint: disable=unused-import
         return ChoiceProvider()
     except ImportError:
         return FileProvider()

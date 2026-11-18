@@ -1,0 +1,34 @@
+[MASTER]
+# 项目内模块可直接导入；不把第三方包当项目模块
+init-hook='import sys; sys.path.insert(0, ".")'
+
+# 禁用与本项目约定不符的纯风格/复杂度规则；保留真实错误检查（import-error、unused-import、未用变量、语法问题等）
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    line-too-long,
+    import-outside-toplevel,
+    wrong-import-position,
+    unused-argument,
+    too-many-arguments,
+    too-many-positional-arguments,
+    too-many-locals,
+    too-many-instance-attributes,
+    too-few-public-methods,
+    broad-exception-caught,
+    global-statement,
+    multiple-statements,
+    unnecessary-lambda-assignment,
+    unnecessary-comprehension,
+    invalid-name
+
+[MESSAGES CONTROL]
+
+[FORMAT]
+max-line-length=120
+
+[DESIGN]
+max-args=10
+max-locals=30
+max-attributes=15

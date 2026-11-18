@@ -10,6 +10,7 @@ langsmith>=0.1
 pandas>=2.0
 numpy>=1.26
 scikit-learn>=1.4
+scipy>=1.11
 python-dotenv>=1.0
 
 # ---- V2：数据库 + RAG ----

@@ -7,9 +7,6 @@
 """
 from __future__ import annotations
 
-import os
-from datetime import date
-
 from db.db_client import QuantDB
 from ingest.data_providers import get_provider
 from rag.embedder import get_embedder
