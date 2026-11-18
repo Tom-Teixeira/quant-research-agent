@@ -23,6 +23,13 @@ class _MockChatDeepSeek(BaseChatModel):
         text = _compose_mock(messages)
         return ChatResult(generations=[ChatGeneration(text=text, message=AIMessage(content=text))])
 
+    def _stream(self, messages: list, stop: list | None = None, run_manager=None, **kwargs: Any):
+        from langchain_core.outputs import ChatGenerationChunk
+
+        result = self._generate(messages, stop=stop, run_manager=run_manager, **kwargs)
+        for generation in result.generations:
+            yield ChatGenerationChunk(message=generation.message)
+
     def bind_tools(self, tools: list[BaseTool | dict], **kwargs: Any) -> BaseChatModel:
         return self
 
